@@ -1,12 +1,11 @@
-export interface RateLimitResult{
+export interface RateLimitResult {
     blocked: boolean;
     limit: number;
     remaining: number;
     resetTime: number;
 }
 
-export interface Options {
-    keyPrefix?: string;
+export interface RateLimitOptions {
     points: number;
     duration: number;
 }
