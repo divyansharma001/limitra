@@ -11,8 +11,12 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/ioredis": "^4.28.10",
     "@types/node": "^25.0.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "ioredis": "^5.8.2"
   }
 }

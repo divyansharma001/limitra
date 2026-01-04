@@ -10,6 +10,10 @@ export interface RateLimitOptions {
     duration: number;
 }
 
+export interface Store {
+    increment: (key: string, windowSeconds: number) => Promise<{count:number; resetTime:number}>;
+}
+
 export interface RateLimiter {
     consume : (key: string) => Promise<RateLimitResult>;
 }
