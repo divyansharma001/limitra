@@ -10,10 +10,21 @@ export interface RateLimitOptions {
     duration: number;
 }
 
+export interface TokenBucketResult {
+    blocked: boolean;
+    tokensLeft: number;
+}
+
 export interface Store {
-    increment: (key: string, windowSeconds: number) => Promise<{count:number; resetTime:number}>;
+    increment: (key: string, windowSeconds: number) => Promise<{ count: number; resetTime: number }>;
+
+    consumeTokenBucket: (
+        key: string,
+        capacity: number,
+        refillTokens: number,
+    ) => Promise<TokenBucketResult>;
 }
 
 export interface RateLimiter {
-    consume : (key: string) => Promise<RateLimitResult>;
+    consume: (key: string) => Promise<RateLimitResult>;
 }
