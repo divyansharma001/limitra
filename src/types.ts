@@ -21,7 +21,7 @@ export interface Store {
     consumeTokenBucket: (
         key: string,
         capacity: number,
-        refillTokens: number,
+        refillRate: number
     ) => Promise<TokenBucketResult>;
 }
 
