@@ -1,4 +1,4 @@
-import type { Store, TokenBucketResult } from "../types";
+import type { Store, TokenBucketResult } from "../types.js";
 
 interface WindowData {
     count: number;

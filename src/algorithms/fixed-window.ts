@@ -1,4 +1,4 @@
-import type { RateLimitOptions, RateLimitResult, RateLimiter, Store } from "../types";
+import type { RateLimitOptions, RateLimitResult, RateLimiter, Store } from "../types.js";
 
 export const createFixedWindow = (store: Store, options: RateLimitOptions): RateLimiter =>{
 

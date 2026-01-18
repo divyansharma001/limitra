@@ -1,4 +1,4 @@
-import type {RateLimitOptions, RateLimitResult, RateLimiter, Store} from "../types"
+import type {RateLimitOptions, RateLimitResult, RateLimiter, Store} from "../types.js"
 
 export const createTokenBucket = (store: Store, options: RateLimitOptions): RateLimiter =>{
     const refillRate = options.points/options.duration //tokens per second

@@ -1,23 +1,36 @@
 {
   "name": "limitra",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Adaptive Rate Limiter for Express with Redis/Memory support",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "dev": "npx tsc && node dist/index.js"
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "echo \"See examples/ folder for usage\""
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "rate-limit",
+    "express",
+    "redis",
+    "adaptive",
+    "middleware"
+  ],
+  "author": "Your Name",
   "license": "ISC",
   "devDependencies": {
-    "@types/express": "^5.0.6",
+    "@types/express": "^5.0.0",
     "@types/ioredis": "^4.28.10",
-    "@types/node": "^25.0.3",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "@types/node": "^22.0.0",
+    "express": "^4.21.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
   },
   "dependencies": {
-    "express": "^5.2.1",
-    "ioredis": "^5.8.2"
+    "ioredis": "^5.4.2"
   }
 }

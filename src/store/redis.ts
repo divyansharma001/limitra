@@ -1,5 +1,5 @@
 import type { Redis } from "ioredis";
-import type { Store, TokenBucketResult } from "../types";
+import type { Store, TokenBucketResult } from "../types.js";
 
 //lua script for atomic token bucket operation
 
