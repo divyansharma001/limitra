@@ -37,6 +37,16 @@ export const createMemoryStore = (): Store => {
         }
     }
 
+    const get = async(key:string) =>{
+        const record = map.get(key);
+
+        if(!record || Date.now()>record.expiry){
+            return 0;
+        }
+
+        return record.count;
+    }
+
     const consumeTokenBucket = async(
         key: string,
         capacity: number,
@@ -70,5 +80,5 @@ export const createMemoryStore = (): Store => {
         };
     }
 
-    return { increment , consumeTokenBucket };
+    return { increment, get, consumeTokenBucket };
 }

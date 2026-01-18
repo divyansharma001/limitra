@@ -3,6 +3,7 @@ import { createFixedWindow } from "./algorithms/fixed-window";
 import { createTokenBucket } from "./algorithms/token-bucket";
 import { createMemoryStore } from "./store/memory";
 import { createRedisStore } from "./store/redis";
+import { createSlidingWindow } from "./algorithms/sliding-window";
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -45,6 +46,24 @@ const run = async () => {
     const redisTbLimiter = createTokenBucket(redisStore, tbOptions);
     await redisClient.del("user_tb_redis"); // Clean up before test
     await testTokenBucket(redisTbLimiter, "user_tb_redis");
+
+
+    console.log("\n--- Testing Sliding Window ---");
+    const swOptions = { points: 5, duration: 10 };
+    
+    const redisSliding = createSlidingWindow(redisStore, swOptions);
+    const testKey = "user_sliding_redis";
+    await redisClient.del(`${testKey}:${Math.floor(Date.now()/10000)*10000}`); // Rough cleanup
+
+
+     console.log("Simulating Sliding Window...");
+    
+    for(let i=0; i<7; i++) {
+        const res = await redisSliding.consume(testKey);
+        console.log(`Request ${i+1}: ${res.blocked ? "BLOCKED" : "Allowed"} (Remaining: ${res.remaining})`);
+        await sleep(500); // spread requests slightly
+    }
+
 
 
     redisClient.disconnect();

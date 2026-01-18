@@ -90,6 +90,11 @@ export const createRedisStore = (redisClient: Redis): Store =>{
         }
     }
 
+    const get = async(key: string)=>{
+        const result = await redisClient.get(key);
+        return result ? parseInt(result, 10) :0;
+    }
+
     const consumeTokenBucket = async (
         key: string,
         capacity: number,
@@ -112,5 +117,5 @@ export const createRedisStore = (redisClient: Redis): Store =>{
         };
     };
 
-    return { increment, consumeTokenBucket }
+    return { increment, get, consumeTokenBucket }
 }

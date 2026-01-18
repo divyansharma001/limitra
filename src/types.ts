@@ -18,6 +18,8 @@ export interface TokenBucketResult {
 export interface Store {
     increment: (key: string, windowSeconds: number) => Promise<{ count: number; resetTime: number }>;
 
+    get: (key:string) => Promise<number>;
+
     consumeTokenBucket: (
         key: string,
         capacity: number,
