@@ -1,93 +1,203 @@
-# Limitra Rate Limiter
+# Limitra
 
-A modular, adaptive rate limiting library for Node.js/Express with pluggable stores, multiple algorithms, and automatic health-based strategy switching.
+Limitra is a production-grade rate limiter that prioritizes system survival.
 
-## Highlights
-- Algorithms: Sliding Window, Fixed Window, Token Bucket
-- Stores: Redis (distributed), Memory (in-process)
-- Adaptive selector: switches strategies based on system health (event loop lag, memory, CPU)
-- Express middleware: drop-in `app.use(limitra({ limiter }))`
-- TypeScript, strict mode, NodeNext modules
+Unlike standard limiters that force a static choice (Redis vs. Memory), Limitra allows you to hot-swap strategies based on system load. Switch from accurate-but-expensive Redis algorithms to fast-and-cheap Memory algorithms dynamically when your server is under stress.
 
-## Architecture
-- **Core types**: shared contracts for stores and limiters (`src/types.ts`)
-- **Stores**: Redis (`src/store/redis.ts`), Memory (`src/store/memory.ts`)
-- **Algorithms**: Sliding Window (`src/algorithms/sliding-window.ts`), Fixed Window (`src/algorithms/fixed-window.ts`), Token Bucket (`src/algorithms/token-bucket.ts`)
-- **Adaptive limiter**: strategy selector + map of concrete limiters (`src/adaptive.ts`)
-- **Middleware**: Express adapter handling headers and responses (`src/middleware.ts`)
-- **Health utils**: event loop lag probe (`src/utils/health.ts`)
-- **Example**: Adaptive Express server (`src/server-test.ts`, `examples/express-server.ts`)
+## Features
+
+**Adaptive**: Automatically switches strategies based on Event Loop Lag or Redis availability.
+
+**Modular**: Decoupled architecture. Mix and match Algorithms (Sliding, Fixed, Token) with Stores (Redis, Memory).
+
+**Atomic Redis**: Uses custom Lua scripts for race-condition-free distributed limiting.
+
+**Lightweight**: Redis is an optional peer dependency. Zero bloat for memory-only users.
+
+**TypeScript**: Fully typed with modern ESM support.
 
 ## Installation
+
 ```bash
-npm install
+npm install limitra
 ```
 
-## Building
-```bash
-npm run build
-```
-Outputs TypeScript declarations and compiled JS in `dist/`.
+**Note**: If you plan to use Redis, you must install the client yourself:
 
-## Usage
-Create a limiter and attach the middleware:
-```ts
+```bash
+npm install ioredis
+```
+
+## Quick Start
+
+Here is the standard setup using the Sliding Window algorithm (Industry Standard) with Redis.
+
+```typescript
 import express from "express";
-import { Redis } from "ioredis";
-import { createRedisStore, createSlidingWindow, limitra } from "limitra";
+import Redis from "ioredis";
+import { 
+  createRedisStore, 
+  createSlidingWindow, 
+  limitra 
+} from "limitra";
 
 const app = express();
-const redis = new Redis();
-const store = createRedisStore(redis);
-const limiter = createSlidingWindow(store, { points: 100, duration: 60 });
+const redisClient = new Redis();
 
-app.use(limitra({ limiter }));
-app.get("/", (_req, res) => res.send("ok"));
+// 1. Create the Store
+const store = createRedisStore(redisClient);
+
+// 2. Create the Limiter (100 requests per minute)
+const limiter = createSlidingWindow(store, { 
+  points: 100, 
+  duration: 60 
+});
+
+// 3. Apply Middleware
+app.use(limitra({ 
+  limiter,
+  // Optional: Custom key generator (default is req.ip)
+  keyGenerator: (req) => req.user?.id || req.ip 
+}));
+
+app.get("/", (req, res) => res.send("Welcome!"));
+
 app.listen(3000);
 ```
 
-## Adaptive Mode (health-driven)
-See `src/server-test.ts` for a working example. The selector checks:
-- Event loop lag via `measureEventLoopLag()`
-- Heap usage percent from `process.memoryUsage()`
-- CPU load via `os.loadavg()` relative to core count
+## The Adaptive Limiter (Killer Feature)
 
-When thresholds are exceeded, it switches to a cheaper in-memory limiter; otherwise it uses the Redis-backed limiter.
+This is why you use Limitra. Prevent "Death Spirals" by shedding load cheaply when your server is dying.
 
-## Express Middleware Behavior
-- Calls `limiter.consume(key)` (default key: client IP)
-- Sets `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` and `Retry-After`
-- On block: responds with 429 and configurable message/status
-- On allow: calls `next()`
+**Scenario**:
+- **Normal**: Use Redis (Sliding Window) for global consistency.
+- **Panic**: If Event Loop Lag > 50ms, switch to Memory (Fixed Window) to save I/O.
 
-### Customization
-- `keyGenerator(req)`: derive a key (e.g., user ID, API token)
-- `message`: response body when blocked
-- `statusCode`: HTTP status when blocked
+```typescript
+import { 
+  createAdaptiveLimiter, 
+  createMemoryStore, 
+  createRedisStore,
+  createSlidingWindow,
+  createFixedWindow,
+  measureEventLoopLag,
+  limitra
+} from "limitra";
+import Redis from "ioredis";
 
-## Algorithms
-- **Sliding Window**: weighted previous window to smooth edges.
-- **Fixed Window**: simple bucket reset per interval; fastest.
-- **Token Bucket**: smooth consumption with refill rate; good for bursts.
+// 1. Define Strategies
+const redisStore = createRedisStore(new Redis());
+const memoryStore = createMemoryStore();
 
-## Stores
-- **Redis store**: distributed counters for multi-instance deployments.
-- **Memory store**: zero-dependency, in-process; ideal for panic/backup mode.
+// Accurate but expensive (Network I/O)
+const normalStrategy = createSlidingWindow(redisStore, { points: 10, duration: 60 });
 
-## Health Probing
-- `measureEventLoopLag()`: measures lag using `setImmediate` scheduling.
-- You can plug additional probes (e.g., Redis latency, custom SLOs) into the adaptive selector.
+// Fast but local (In-Memory)
+const panicStrategy = createFixedWindow(memoryStore, { points: 5, duration: 60 });
 
-## Testing Locally
-- Start Redis locally if using Redis-backed limiters.
-- Run the sample server and hit it with `curl` or a load tool:
-```bash
-npm run build
-node dist/server-test.js
+// 2. Create the Brain
+const adaptiveLimiter = createAdaptiveLimiter({
+  strategies: {
+    "normal": normalStrategy,
+    "panic": panicStrategy
+  },
+  selector: async () => {
+    // Check Event Loop Lag
+    const lag = await measureEventLoopLag();
+    
+    // If lag is high, server is struggling. Don't call Redis.
+    if (lag > 50) return "panic";
+    
+    return "normal";
+  }
+});
+
+// 3. Use it
+app.use(limitra({ limiter: adaptiveLimiter }));
 ```
 
-## Package Entry Points
-- Library re-exports live in `src/index.ts` and emit to `dist/` after build.
+## API Reference
 
-## License
-MIT
+### 1. Algorithms
+
+Limitra supports three core algorithms. You can use any algorithm with any store.
+
+| Algorithm | Function | Use Case |
+|-----------|----------|----------|
+| Sliding Window | `createSlidingWindow` | Recommended. Best balance of accuracy and fairness. Prevents "edge" spikes. |
+| Fixed Window | `createFixedWindow` | Fastest. Best for "Panic Mode" or simple limits. Resets strictly at time boundaries. |
+| Token Bucket | `createTokenBucket` | Bursty Traffic. Allows a burst of requests up to capacity, then refills at a steady rate. |
+
+### 2. Stores
+
+**createMemoryStore()**
+
+Stores data in a JavaScript Map.
+
+- **Pros**: Fastest (~0ms latency). No external dependencies.
+- **Cons**: State is local to the process (not shared across a cluster). Data lost on restart.
+
+**createRedisStore(redisClient)**
+
+Requires an ioredis client instance.
+
+- **Pros**: Distributed state (shared limits across multiple servers).
+- **Cons**: Adds network latency.
+- **Atomicity**: Uses custom Lua scripts to ensure accuracy under high concurrency.
+
+### 3. Middleware Options
+
+The `limitra` function accepts the following options:
+
+```typescript
+limitra({
+  limiter: RateLimiter; // The instance created via algorithms
+  
+  // How to identify the user. Default: req.ip
+  keyGenerator?: (req: Request) => string;
+  
+  // Custom error message or object. Default: "Too many requests..."
+  message?: string | object;
+  
+  // HTTP status code. Default: 429
+  statusCode?: number;
+})
+```
+
+## Architecture
+
+Limitra uses a Strategy Pattern to decouple logic from storage.
+
+```mermaid
+graph TD
+    UserRequest --> ExpressMiddleware
+    ExpressMiddleware --> AdaptiveLimiter
+    
+    subgraph "Decision Layer"
+        AdaptiveLimiter -- "Check Health" --> EventLoopProbe
+        AdaptiveLimiter -- "Select Strategy" --> StrategySelector
+    end
+    
+    subgraph "Execution Layer"
+        StrategySelector -- "Normal" --> SlidingWindow
+        StrategySelector -- "Panic" --> FixedWindow
+        
+        SlidingWindow -- "Distributed" --> RedisStore
+        FixedWindow -- "Local" --> MemoryStore
+    end
+```
+
+## Development
+
+To build the project locally or run tests:
+
+```bash
+# Install dependencies
+npm install
+
+# Build the project (outputs to dist/)
+npm run build
+
+# Run the example server
+npx tsx examples/express-server.ts
+```
