@@ -1,6 +1,6 @@
 {
   "name": "limitra",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Adaptive Rate Limiter for Express with Redis/Memory support",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -35,7 +35,7 @@
     "@types/ioredis": "^4.28.10",
     "@types/node": "^22.0.0",
     "express": "^4.21.2",
-    "ioredis": "^5.4.2", 
+    "ioredis": "^5.4.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   }
