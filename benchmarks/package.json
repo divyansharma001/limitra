@@ -1,0 +1,16 @@
+    {
+  "name": "limitra-benchmarks",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx server.ts"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "ioredis": "^5.4.2",
+    "rate-limiter-flexible": "^5.0.0",
+    "express-rate-limit": "^7.1.5",
+    "rate-limit-redis": "^4.2.0",
+    "tsx": "^4.19.2"
+  }
+}

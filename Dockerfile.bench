@@ -1,0 +1,20 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# 1. Copy root config files
+COPY package.json tsconfig.json ./
+
+# 2. Setup Benchmark Dependencies
+COPY benchmarks/package.json ./benchmarks/
+WORKDIR /app/benchmarks
+RUN npm install
+
+# 3. Copy Source Code (so bench can import ../src)
+WORKDIR /app
+COPY src ./src
+COPY benchmarks/server.ts ./benchmarks/
+
+# 4. Run the benchmark server
+WORKDIR /app/benchmarks
+CMD ["npm", "start"]

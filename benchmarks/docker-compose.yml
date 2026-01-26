@@ -1,0 +1,45 @@
+version: "3.8"
+services:
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  # LIMITRA (Running on Port 3001)
+  bench-limitra:
+    build:
+      context: ..
+      dockerfile: Dockerfile.bench
+    environment:
+      - LIB_TYPE=limitra
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "3001:3000"
+    depends_on:
+      - redis
+
+  # EXPRESS-RATE-LIMIT (Running on Port 3002)
+  bench-erl:
+    build:
+      context: ..
+      dockerfile: Dockerfile.bench
+    environment:
+      - LIB_TYPE=erl
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "3002:3000"
+    depends_on:
+      - redis
+
+  # RATE-LIMITER-FLEXIBLE (Running on Port 3003)
+  bench-rlf:
+    build:
+      context: ..
+      dockerfile: Dockerfile.bench
+    environment:
+      - LIB_TYPE=rlf
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "3003:3000"
+    depends_on:
+      - redis
