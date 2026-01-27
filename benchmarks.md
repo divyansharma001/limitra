@@ -1,4 +1,4 @@
-This report documents a comparative analysis between Limitra, rate-limiter-flexible (RLF), and express-rate-limit (ERL). The document is intended to be placed in your repository root or a dedicated benchmarks folder.
+This report documents a comparative analysis between Limitra, rate-limiter-flexible (RLF), and express-rate-limit (ERL).
 
 Our primary objectives were to answer two fundamental questions:
 
