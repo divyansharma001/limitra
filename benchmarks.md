@@ -1,6 +1,6 @@
 This report documents a comparative analysis between Limitra, rate-limiter-flexible (RLF), and express-rate-limit (ERL).
 
-Our primary objectives were to answer two fundamental questions:
+My primary objectives were to answer two fundamental questions:
 
 1. Is Limitra fast enough for production use? (Baseline Latency)
 2. Can Limitra maintain service during infrastructure failures? (System Failure Survival)
@@ -18,7 +18,7 @@ All tests were conducted in a strictly isolated environment to ensure fair and r
 
 ## Phase 1: Baseline Performance Under Normal Conditions
 
-In this test, we measured the overhead introduced by each rate limiting solution under high concurrency when the system is operating normally.
+In this test, I measured the overhead introduced by each rate limiting solution under high concurrency when the system is operating normally.
 
 - **Load**: 60 Concurrent Virtual Users
 - **Duration**: 30 seconds
@@ -39,7 +39,7 @@ Limitra demonstrates strong performance characteristics. With a P95 latency of 2
 
 ## Phase 2: Resilience Under Infrastructure Failure
 
-This test represents the critical differentiator for production viability. We simulated a partial infrastructure failure to observe how each library handles adverse conditions.
+This test represents the critical differentiator for production viability. I simulated a partial infrastructure failure to observe how each library handles adverse conditions.
 
 - **Scenario**: At T+10 seconds, the Redis connection was forcibly severed to simulate a database outage
 - **Expected Behavior**: The API should remain operational, falling back to a safe degraded mode
