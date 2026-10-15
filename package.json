@@ -11,7 +11,8 @@
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build",
-    "test": "echo \"See examples/ folder for usage\""
+    "test": "tsx --test test/*.test.ts",
+    "bench:outage": "tsx bench/outage.ts"
   },
   "keywords": [
     "rate-limit",

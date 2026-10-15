@@ -31,6 +31,7 @@ const adaptiveLimiter = createAdaptiveLimiter({
         "normal": normalLimiter,
         "panic": panicLimiter
     },
+    fallback: "panic", // if Redis fails, keep limiting from memory
     selector: () => {
         // In a real app, you might check: os.loadavg(), or Redis latency
         if (isSystemOverloaded) {

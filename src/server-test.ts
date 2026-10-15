@@ -37,6 +37,7 @@ const adaptiveLimiter = createAdaptiveLimiter({
         "normal": normalLimiter,
         "panic": panicLimiter
     },
+    fallback: "panic", // if Redis fails, keep limiting from memory
     selector: async () => {
         // Check Event Loop Lag
         const eventLoopLag = await measureEventLoopLag();

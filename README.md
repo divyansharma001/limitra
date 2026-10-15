@@ -6,7 +6,7 @@ Unlike standard limiters that force a static choice (Redis vs. Memory), Limitra 
 
 ## Features
 
-**Adaptive**: Automatically switches strategies based on Event Loop Lag or Redis availability.
+**Adaptive**: Switches strategies per request based on Event Loop Lag, and falls back to memory when Redis fails.
 
 **Modular**: Decoupled architecture. Mix and match Algorithms (Sliding, Fixed, Token) with Stores (Redis, Memory).
 
@@ -109,12 +109,28 @@ const adaptiveLimiter = createAdaptiveLimiter({
     if (lag > 50) return "panic";
     
     return "normal";
-  }
+  },
+  // If Redis fails (down, timing out), use the memory strategy instead of letting requests through
+  fallback: "panic",
 });
 
 // 3. Use it
 app.use(limitra({ limiter: adaptiveLimiter }));
 ```
+
+### When Redis goes down: `fallback`
+
+If the chosen strategy throws (Redis is down or timing out), the adaptive limiter answers from the `fallback` strategy instead, so requests are still limited.
+The failed strategy is then skipped for `cooldownMs` (default 5000) so requests do not keep waiting on a dead Redis, and tried again after that.
+
+Without `fallback`, the error reaches the middleware, which lets the request through unlimited.
+
+Check it yourself with a real Redis in Docker: `npm run bench:outage` kills Redis halfway through and counts what gets through.
+
+| Limit 50 per 60 s, Redis killed, then 120 requests | Got through | Blocked (429) |
+| --- | --- | --- |
+| With `fallback: "panic"` | 50 | 70 |
+| Without `fallback` | 120 | 0 |
 
 ## API Reference
 
